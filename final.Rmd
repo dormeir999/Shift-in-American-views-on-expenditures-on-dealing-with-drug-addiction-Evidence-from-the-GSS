@@ -1,0 +1,269 @@
+---
+title: "Shift in American views on expenditures on dealing with drug addiction: Evidence from the GSS"
+output: 
+  html_document: 
+    fig_height: 4
+    highlight: pygments
+    theme: spacelab
+    toc: true
+    toc_float: true
+---
+
+## Setup
+
+### Load packages
+
+```{r load-packages, message = FALSE}
+Sys.setenv(TZ='United States')
+library(ggplot2)
+library(dplyr)
+library(statsr)
+```
+
+### Load data
+
+
+```{r load-data}
+load("gss.Rdata")
+```
+
+### Attach dataset (for variables easy access)
+
+```{r attach-data}
+attach(gss, warn.conflicts = FALSE)
+```
+
+* * *
+
+## Part 1: Data
+
+The [survey's website](http://gss.norc.org/About-The-GSS) claims the *General Social Survey (GSS) is a nationally __representative survey of adults in the United States__ conducted since 1972. The GSS collects data on contemporary American society in order to monitor and explain trends in opinions, attitudes and behaviors... The General Social Survey has carried out an extensive range of methodological research designed both to advance survey methods in general and to insure that the __GSS data are of the highest possible quality__*.
+
+#### Data Collection Method
+
+Unlike the full General Social Survey Cumulative File, we are told in our [course adjusted codebook](https://d3c33hcgiwev3.cloudfront.net/_8abbe344133a7a8c98cfabe01a5075c2_gss.html?Expires=1606953600&Signature=DtzA77272Fsc5ghOqLNPNefEa2Xp4vIAOB0j6CY~jPur9XRt~uq3EvPFCBoGUR0M8o~WtVayCzM0DZulolwVTVav9-~w3Fd~Pwg9oYjgBD5Zow6KAFnlZExU18sYEnz8zDX4d1Ld3N-T~ysZeNyOgf33gqVUrzXxs~Q4P1xqMfs_&Key-Pair-Id=APKAJLTNE6QMUY6HBC5A) that missing values were removed from the responses. Even though, there are still some missing values we would need to pay attention too when examining our research variables:
+
+``` {r missing_values}
+NAs_cols <- colSums(is.na(gss))
+NAs_cols
+```
+
+The GSS [sampling design and weighting appendix](http://gss.norc.org/documents/codebook/GSS_Codebook_AppendixA.pdf) claims that *the sample was divided into two parts, one-half full probability and one-half __block__ quota*, and that the *__quota sampling is used with quotas based on sex, age, and employment status__* - so we have a sufficient reason to believe the fourth principle of experimental design, __Blocking__, is fairly achieved for any variables we'll examine. Even though, this study was not designed as an experimental one but rather __an observational__, so if we wish to find any  causal relationship it would have to come from external factors, as done in [natural experiments](https://en.wikipedia.org/wiki/Natural_experiment). 
+
+```{r n_respondants}
+head(gss[0:8])
+
+ggplot(data = gss, aes(x = year)) +
+    geom_bar() + ggtitle("The number of respondents for the GSS in each year") +
+    theme(axis.text.x = element_text(face = "bold", color = "#993333", angle = 90, vjust = 0.5)) + scale_x_continuous(breaks=seq(1972, 2012, 1))
+respondents_years <- data.frame(table(year))
+summary(respondents_years$Freq)
+```
+
+As we can see, we have data from 1972 to 2012, with some missing years. The number of respondents in each year varies from minimum of 1372 respondents in 1990 to maximum of 4510 respondents in 2006 - in any case we are told __we have a representative sample for each year, with more than 1300 observations without replacement but no more than 10% of the population__ in of the entire US in each survey year (which in 1970 was 200M*10%=20M).
+
+Our main reservation might be that there's some non-neutrality in the way of asking the questions in the survey, or that people are answering the questions not truthfuly, and we'd have to address later on.
+
+* * *
+
+
+## Part 2: Research question
+
+### Background - Changes in Marijuana abuse enforcment in the US over the recent years
+In 1996, [California voters voted for California Proposition 215](https://www.myvetcandy.com/newsblog/2020/7/14/the-history-of-cbd), legalizing the growing and use of marijuana for medical purposes. On 6 November 2012, [Colorado and Washington state legalized possession of small amounts of marijuana](https://money.cnn.com/2012/11/07/news/economy/marijuana-legalization-washington-colorado/index.html) for private recreational use, and created a process for writing rules for legal growing and commercial distribution of marijuana within each state. In 2014-2019, [recreational use of marijuana was legislated](https://en.wikipedia.org/wiki/Drug_liberalization#United_States) in Oregon, Alaska, Washington D.C, California, Michigan and Illinois.
+
+### Our variable of interest
+
+__NATDRUG - DEALING WITH DRUG ADDICTION__
+
+[From the codebook](https://d3c33hcgiwev3.cloudfront.net/_8abbe344133a7a8c98cfabe01a5075c2_gss.html?Expires=1607385600&Signature=CgUQfddf1XntF8Fd8WLHg7sr194S2r~UM-afRaqUVvYRSc6MPSI6mqo8I0sfyUOrm1DJyxOI~3~7mdJ2ZU26nMy8EN3hKx9ajdYmNF4MVyTMhFyLQ2u55vBwbqH8ZSFOpc3TPlozO1X5SbmiM2dAyvfUbFL7WgdH8aRzd52XM0E_&Key-Pair-Id=APKAJLTNE6QMUY6HBC5A): We are faced with many problems in this country, none of which can be solved easily or inexpensively. I'm going to name some of these problems, and for each one I'd like you to tell me __whether you think we're spending too much money on it, too little money, or about the right amount for Dealing with drug addiction__: 
+
+1.	TOO LITTLE
+
+2.	ABOUT RIGHT
+
+3.	TOO MUCH
+
+4.  NA -	invalid response + don't know + refused to answer
+
+A reservation - the question might be phrased in a manner presenting the spending as a bad thing from the start, and people also might be affected by the answers and so might have an interest too lie. 
+
+In order to address that we'll __assume the question has the exact same bias in different years asked, because the question has the same exact phrasing for all years and because the interest of the reposndants for answering the questions didn't change on the course of the years__.
+While the first assumption sounds fairly correct, the second one might not be so - so we'll keep this in mind when drawing conclusions from the inference. 
+
+### The research question
+
+__Is the proportion of Americans who think 'Too Much' is spent on dealing with drug addiction different between 1994 and 2012?__
+
+We used the proportion of _'Too Much'_ answers as our target value, and examined only two years of interest (1994 & 2012), in order to better define our research question. Almost all survies after 1993 had at least 2000 respondents, so we might give more credit to our results as representative of the population.
+
+This questions is of interest to us, since it may reflect if the public is happy with the major drug enforcement reforms or their consequences that were done from 1996 onward. but we should always keep in mind - __we can't say there's any causal effect here__, first and foremost because it looks like there might be __simultaneous effects__: The changes in drug enforcement might effect the public opinion on dealing with drug addiction but also the public opinion might promote changes in drug enforcement.
+
+Also, the dealing with drug addiction question is not exclusively related to Marijuana, and there might be __Confounding Factors__ the affect the two subjects in matter, such as a growing spread of liberal ideals. This spread of liberal ideas might support both the lowering public expenditures in general (and drug addiction treatments expenditures in private) and the promotion of individualism and more self-responsibility of one on his own 'mistakes' (instead of helping him deal with his drug addiction).
+
+
+
+* * *
+
+## Part 3: Exploratory data analysis
+
+``` {r research-data}
+attach(gss, warn.conflicts = FALSE)
+natdrug_year_table <- table(year,natdrug)[2:29,]
+#barplot(t(natdrug_year_table), las=2)
+natdrug_year_prop_table <- prop.table(natdrug_year_table, margin=1)
+ggplot(as.data.frame(natdrug_year_prop_table),aes(x=year,y=Freq, fill=natdrug)) + geom_col() + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + ggtitle("Is the average American becoming less willing to sepend money \non dealing with drug addiction?")
+```
+
+The plot above shows the proportions of Americans in the survey (representative for the population as a whole) that believe 'Too Little', 'About Right' and 'Too Much' is spent on dealing with drug addiction. 
+We can see that the 'Too Much' opinion is roughly increasing between 1994 and 2012, but we should zoom in a little to get a better perspective:
+
+
+``` {r research-data-too-much}
+hypothesis_table <- cbind(natdrug_year_prop_table[,1] + natdrug_year_prop_table[,2], natdrug_year_prop_table[,3])
+df_hypothesis <- data.frame(cbind(natdrug_year_prop_table[,1] + natdrug_year_prop_table[,2], natdrug_year_prop_table[,3]))
+colnames(df_hypothesis) <- c('Too little + About right','Too Much')
+barplot(df_hypothesis$`Too Much`, names=rownames(df_hypothesis),las=2, ylim=c(0,0.13), main = "The proportion of Americans who think \n'Too Much' is spent on dealing with drug addictions") 
+```
+
+We can see that 1994 had about 10% 'Too Much' opinion, while 2012 had about 12%.
+Too be precise:
+
+``` {r summary-statistics}
+df_hypothesis[c("1994","2012"),]
+respondents_years %>% filter(year==1994 | year==2012)
+data_natdrug_1994_2012 <- gss %>% select(c(natdrug,year)) %>% filter(year==1994|year==2012)
+data_natdrug_1994_2012<- data.frame(data_natdrug_1994_2012)
+data_natdrug_1994_2012<- data.frame(cbind(data_natdrug_1994_2012$natdrug=='Too Much',data_natdrug_1994_2012$year))
+colnames(data_natdrug_1994_2012) <- c('too_much','year')
+data_natdrug_1994_2012 <- data_natdrug_1994_2012[complete.cases(data_natdrug_1994_2012),]
+data_natdrug_1994_2012[data_natdrug_1994_2012==1] <- "Yes"
+data_natdrug_1994_2012[data_natdrug_1994_2012==0] <- "No"
+table(data_natdrug_1994_2012)
+
+```
+
+So our two observations are:
+
+  1. __p^1 = 9.12%__ of the 2993 respondents of 1994 thought 'Too Much' is spend on dealing with drug addiction
+  2. __p^2 = 11.65%__ of the 1974 respondents of 2012 thought 'Too Much' is spend on dealing with drug addiction
+
+(The natdrug variable has no missing values)
+
+We  should now see if these results are statistically significant by their own and if those years are statistically different.
+
+* * *
+
+## Part 4: Inference
+
+We'll be __estimating the difference between two proportions__ - the 'Too Much' proportion in 1994 and in 2012. First we'll check the 95% confidence interval of the difference, and than we'll perform hypothesis test. We don't have to perform bootstrap since we can assume CLT and our sample size is big enough, but we'll do it anyways to see if there's any difference in the results.
+
+### Confidence Interval
+
+point estimate ± margin of error
+
+#### Checking conditions
+
+Conditions for inference for comparing two independent proportions:
+
+1. Independence:
+
+✓ within groups: sampled observations must be independent within each group.
+
+  `- The survey states the observations in years are independent.`
+  
+‣ random sample/assignment
+
+  `- We already checked that in the beginning of this analysis.`
+  
+‣ if sampling without replacement, n < 10% of population
+
+✓ between groups: the two groups must be independent of each other (non-paired)
+
+  `- The survey states the observations between years are independent.`
+  
+2. Sample size/skew: Each sample should meet the success-failure condition:
+
+✓ n1p1 ≥ 10 and n1(1-p1) ≥ 10
+
+`2993 X 9.12%=272.96 and 2993 X 90.88%=2720.0384`
+
+✓ n2p2 ≥ 10 and n2(1-p2) ≥ 10
+
+`1974 X 11.65%=229.971 and 1974 X 88.35%=1744.029`
+
+Our observations might be right skewed since the proportions are very small
+and might be bound by zero, but we have surely enough observations.
+
+--> We can assume that the sampling distribution of the difference
+between the two proportions is nearly normal.
+
+#### Calculating the Confidence Interval
+
+``` {r Confidence-Interval}
+inference(y = too_much, x=year, data = data_natdrug_1994_2012, statistic = "proportion", type = "ci", method = "theoretical", success = "Yes", order = c(2012,1994))
+```
+
+We are 95% confident the true difference in the proportion of people who believe we spend 'Too Much' on dealing with drug addiction between 2012 and 1994 is between 0 to 0.0507 (0-5.07%) 
+
+This means we are pretty sure there's a significant difference between the public opinion in these two years. This difference means usually more people in 2012 think we spend Too Much, and the difference might range up to 5.07%, which is quite a lot when we look back at the proportion in `The proportion of American who think 'Too Much' is spend on dealing with drug addiction` barplot above. __But__, since 0 is inside our range, though in the edge, there's also a slight chance the true difference between the years is 0, in this case there's no difference at all in the opinion Americans in 1994 and 2012.
+
+### Hypothesis Testing
+
+Now we'll perform a two sided hypothesis test, and in order to do that we'll have to calculate the pooled proportion of 'Too Much'.
+
+p^pool = (130+110)/(1426+944) = 0.1013 = 10.13%
+
+#### Checking conditions
+
+We already checked independence in the confidence interval phase before.
+
+2. Sample size/skew: Each sample should meet the success-failure condition:
+
+✓ n1p^pool ≥ 10 and n1(1-p^pool) ≥ 10
+
+`2993 X 10.13%=303.1909 and 2993 X 89.87%=2689.8091`
+
+✓ n2p^pool ≥ 10 and n2(1-p^pool) ≥ 10
+
+`1974 X 10.13%=199.9662 and 1974 X 89.87%=1744.0338`
+
+--> We can assume that the sampling distribution of the difference
+between the two proportions is nearly normal.
+
+#### Our Hypothesis
+
+  H0: p1 = p2, i.e. There's no difference between the proportion of 'Too Much' in 1994 and in 2012.
+  Ha: p1 != p2, i.e. There's a significant difference between the proportion of 'Too Much' in 1994 and in 2012.
+
+
+#### Hypothesis Testing
+
+``` {r Hypothesis-Testing}
+inference(y = too_much, x=year, data = data_natdrug_1994_2012, statistic = "proportion", type = "ht", method = "theoretical", success = "Yes", order = c(2012,1994), alternative = "twosided", sig_level = 0.95)
+```
+
+We can reject the null hypothesis with 95% confidence, meaning we are 95% confident the difference between 'Too Much' proportion in 2012 and 1994, which is 2.53%, is statistically significant. The p-value is actually 4.51%, so given there's no difference between the 2012 and 1994 'Too Much' propotions, the chance we would get a difference of 2.53% or greater or -2.53% or smaller is 4.51%, which is quite low (but not extremly low). So we can be pretty confident there is a significant difference between the public opinion on the matter in these two years, and we estimate that 2.53% more Americans in 2012 think we spend 'Too Much' on dealing with drug addiction. 
+
+### Bootstraping
+
+We'll now also try and simulate the results using bootstrap, just so we can see if there's any difference (we don't have to, as we have enough observations and we can assume CLT). 
+We already checked the condition in the prior phases, and so we'll get straight to the simulations (we'll try both percentile and standard error methods):
+
+``` {r simulation-perc}
+inference(y = too_much, x=year, data = data_natdrug_1994_2012, statistic = "proportion", type = "ht", method = "simulation", success = "Yes", order = c(2012,1994), alternative = "twosided", sig_level = 0.95, boot_method = "perc")
+```
+
+``` {r simulation-se}
+inference(y = too_much, x=year, data = data_natdrug_1994_2012, statistic = "proportion", type = "ht", method = "simulation", success = "Yes", order = c(2012,1994), alternative = "twosided", sig_level = 0.95, boot_method = "se")
+```
+
+Our simulations suggest there's either significant or not significant difference in proportions, which means we can't safely reject using the 95% significance level the null hypothesis of a difference in the 'Too Much' proportions between the two years, but we should pay attention this is a really close call and it might change in any new simulation iteration...
+
+## Conclusion and further research
+
+We know the difference in proportions in our sample of Americans of thought we spend 'Too Much' on dealing with drug addiction between 2012 and 1994 is 2.53%.
+We are 95% confident the true difference in the population is between 0 and 5.07%. We also know that given an assumption that there's no difference between the two years, our estimated sample proportion difference or a more extreme difference is 4.51% likely to occur, so we are 95% sure our result is significant. this is quite close to the minimum level of confidence, and the bootstrapping methods gave sometimes non-significant results because it is so close, but since our sample is big enough and we can assume CLT holds, and we will conclude the difference between the proportions of 'Too Much' in 2012 and 1994 is significant.
+
+This results might open a doorway for more research on the satisfaction of people from the drug enforcement reforms, as people might be wanting to spend less of tax payer money on dealing with drug addiction.
+
