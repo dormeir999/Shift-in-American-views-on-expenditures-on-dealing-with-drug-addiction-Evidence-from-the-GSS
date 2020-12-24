@@ -2,7 +2,7 @@
 Shift in American views on expenditures on dealing with drug addiction: Evidence from the GSS
 Final project on [Inferntial Statistics Course of Duke University](https://www.coursera.org/account/accomplishments/verify/636Y5YEVCTPM)
 
-![alt text](https://github.com/dormeir999/Shift-in-American-views-on-expenditures-on-dealing-with-drug-addiction-Evidence-from-the-GSS/blob/master/images/SHIFTI~1-page-001.jpg)
+![alt text](https://github.com/dormeir999/Shift-in-American-views-on-expenditures-on-dealing-with-drug-addiction-Evidence-from-the-GSS/blob/main/images/SHIFTI~1-page-001.jpg)
 ![alt text](https://github.com/dormeir999/Shift-in-American-views-on-expenditures-on-dealing-with-drug-addiction-Evidence-from-the-GSS/blob/master/images/SHIFTI~1-page-002.jpg)
 ![alt text](https://github.com/dormeir999/Shift-in-American-views-on-expenditures-on-dealing-with-drug-addiction-Evidence-from-the-GSS/blob/master/images/SHIFTI~1-page-003.jpg)
 ![alt text](https://github.com/dormeir999/Shift-in-American-views-on-expenditures-on-dealing-with-drug-addiction-Evidence-from-the-GSS/blob/master/images/SHIFTI~1-page-004.jpg)
